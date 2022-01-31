@@ -61,6 +61,7 @@ class DownloadWidget(Qw.QWidget):
         # Widgets
         self.url = Qw.QPlainTextEdit(self)
         self.url.setMaximumHeight(100)
+        self.url.setAcceptDrops(False)
 
         self.save_path = Qw.QLineEdit(self)
         self.save_path.setReadOnly(True)
