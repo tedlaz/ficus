@@ -22,6 +22,16 @@ install:
 
 build_script:
   # - cmd: externals.ps1
+  - cmd: cd external
+  - cmd: curl -L -o ffmpg.7z https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
+  - cmd: 7z x ffmpg.7z
+  - cmd: del ffmpg.7z
+  - cmd: ren ffmpeg* ffmpeg
+  - cmd: copy ffmpeg/bin/ffmpeg.exe .
+  - cmd: copy ffmpeg/bin/ffprobe.exe .
+  - cmd: copy C:\Windows\SysWOW64\msvcr100.dll .
+  - cmd: curl -L -o youtube-dl.exe https://youtube-dl.org/downloads/latest/youtube-dl.exe
+  - cmd: cd ..
   - cmd: python create_version.py
   - cmd: pyside6-rcc.exe .\resources.qrc -o resources.py
   - cmd: python create_nsi_installer.py
