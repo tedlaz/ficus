@@ -21,7 +21,6 @@ install:
   - cmd: pip freeze
 
 build_script:
-  # - cmd: externals.ps1
   - cmd: cd external
   - cmd: curl -L -o ffmpg.7z https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
   - cmd: 7z e ffmpg.7z  *.exe -r
@@ -33,7 +32,8 @@ build_script:
   - cmd: python create_nsi_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
-  # - cmd: makensis.exe installer.nsi
+  - cmd: makensis.exe installer.nsi
+  - cmd: del ficus.exe
 
 artifacts:
   - path: '*.exe'
