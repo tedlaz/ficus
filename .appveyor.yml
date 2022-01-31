@@ -21,12 +21,13 @@ install:
   - cmd: pip freeze
 
 build_script:
+  - cmd: externals.ps1
   - cmd: python create_version.py
   - cmd: pyside6-rcc.exe .\resources.qrc -o resources.py
   - cmd: python create_nsi_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
-#  - cmd: makensis.exe installer.nsi
+  - cmd: makensis.exe installer.nsi
 
 artifacts:
   - path: '*.exe'
