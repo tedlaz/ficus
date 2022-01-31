@@ -21,13 +21,13 @@ install:
   - cmd: pip freeze
 
 build_script:
-  - cmd: externals.ps1
+  # - cmd: externals.ps1
   - cmd: python create_version.py
   - cmd: pyside6-rcc.exe .\resources.qrc -o resources.py
   - cmd: python create_nsi_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
-  - cmd: makensis.exe installer.nsi
+  # - cmd: makensis.exe installer.nsi
 
 artifacts:
   - path: '*.exe'
@@ -39,7 +39,7 @@ deploy:
   description: v$(appveyor_build_version)
   provider: GitHub
   auth_token:
-    secure: bt06FOuVpHyB8zXIF1jQvTOPU1/7YGe+57IJvn/xn/YTdZxwYCNvYpF3IWQqTptv
+    secure: hvqOsOJoBzZ0iIiQN3CvgB/mnJOwfr7lHfxni9DcgwGzWqCuj82bOzNE6iylOKsk
 
   artifact: myartifact
   draft: false
