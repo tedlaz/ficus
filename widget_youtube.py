@@ -4,44 +4,25 @@ from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
+import tprocess as tpr
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
-from qlist_parsers import extract_list_vars, youtubedl_percent_parser
-from qlist_process_manager import STATUS_COLORS, JobManager, Parsers
 from version import VERSION
 
 
 class ProgressBarDelegate(Qw.QStyledItemDelegate):
     def paint(self, painter, option, index):
-        # data is our status dict, containing progress, id, status
-        job_id, data, ldata = index.model().data(index, Qc.Qt.DisplayRole)
-        if data["progress"] == 0 and data['status'] == Qc.QProcess.NotRunning:
-            color = "#fad2d6"
-            width = option.rect.width()
-            rect = Qc.QRect(option.rect)
-            rect.setWidth(width)
-            brush = Qg.QBrush()
-            brush.setColor(color)
-            brush.setStyle(Qc.Qt.SolidPattern)
-            painter.fillRect(rect, brush)
-
-        if data["progress"] > 0:
-            color = Qg.QColor(STATUS_COLORS[data["status"]])
-            width = option.rect.width() * data["progress"] / 100
-
-            #  Copy of the rect, so we can modify.
-            rect = Qc.QRect(option.rect)
-            rect.setWidth(width)
-
-            brush = Qg.QBrush()
-            brush.setColor(color)
-            brush.setStyle(Qc.Qt.SolidPattern)
-
-            painter.fillRect(rect, brush)
-
+        data = index.model().data(index, Qc.Qt.DisplayRole)
+        color = Qg.QColor(index.model().pmdata.color(index.row()))
+        width = option.rect.width() * data / 100
+        rect = Qc.QRect(option.rect)
+        rect.setWidth(width)
+        brush = Qg.QBrush()
+        brush.setColor(color)
+        brush.setStyle(Qc.Qt.SolidPattern)
+        painter.fillRect(rect, brush)
         pen = Qg.QPen()
         pen.setColor(Qc.Qt.black)
-        data = ldata.get('file', job_id)
-        painter.drawText(option.rect, Qc.Qt.AlignLeft, data)
+        painter.drawText(option.rect, Qc.Qt.AlignCenter, f"{int(data)}%")
 
 
 class DownloadWidget(Qw.QWidget):
@@ -49,10 +30,8 @@ class DownloadWidget(Qw.QWidget):
         super().__init__()
         self.setAcceptDrops(True)
         self.setWindowTitle(f'qYoutube-dl (version : {VERSION})')
-        self.p = None
-        self.update_log = ''
 
-        self.job = JobManager()
+        self.jobs = tpr.TModel()
 
         self.setMinimumHeight(200)
         self.setMinimumWidth(400)
@@ -92,11 +71,19 @@ class DownloadWidget(Qw.QWidget):
         self.bexec = Qw.QPushButton('Go', self)
         self.bexec.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
 
-        self.runinfo = Qw.QListView()
-        self.runinfo.setModel(self.job)
-        # self.runinfo.setModelColumn(1)
+        self.runinfo = Qw.QTableView()
+        self.runinfo.setModel(self.jobs)
+        self.runinfo.setAlternatingRowColors(True)
+        self.runinfo.setSelectionMode(Qw.QAbstractItemView.NoSelection)
+        self.runinfo.setContextMenuPolicy(Qc.Qt.CustomContextMenu)
+        self.runinfo.customContextMenuRequested.connect(self.on_context)
+        self.runinfo.setColumnWidth(1, 350)
+        self.runinfo.setShowGrid(False)
+        self.runinfo.horizontalHeader().setStretchLastSection(True)
+        self.runinfo.resizeRowsToContents()
+
         delegate = ProgressBarDelegate()
-        self.runinfo.setItemDelegate(delegate)
+        self.runinfo.setItemDelegateForColumn(0, delegate)
 
         # Layouts
         vlayout = Qw.QVBoxLayout(self)
@@ -142,6 +129,51 @@ class DownloadWidget(Qw.QWidget):
         self.bupdateyutubedl.clicked.connect(self.update_youtube_dl)
         self.bexec.clicked.connect(self.on_bexec_clicked)
 
+    def on_context(self, point):
+        acre = Qg.QAction(
+            'terminate',
+            self,
+            statusTip='terminate job',
+            triggered=self.terminate
+        )
+        arem = Qg.QAction(
+            'remove',
+            self,
+            statusTip='remove job',
+            triggered=self.remove
+        )
+        arestart = Qg.QAction(
+            'restart',
+            self,
+            statusTip='restart job',
+            triggered=self.restart
+        )
+        menu = Qw.QMenu("Menu", self)
+        menu.addAction(acre)
+        menu.addAction(arestart)
+        menu.addAction(arem)
+        menu.exec(self.runinfo.mapToGlobal(point))
+
+    def terminate(self):
+        idx = self.runinfo.currentIndex().row()
+        # print(idx)
+        if idx < 0:
+            return
+        self.jobs.pmdata.terminate(idx)
+
+    def remove(self):
+        idx = self.runinfo.currentIndex().row()
+        if idx < 0:
+            return
+        self.jobs.pmdata.terminate(idx)
+        self.jobs.pmdata.remove(idx)
+
+    def restart(self):
+        idx = self.runinfo.currentIndex().row()
+        if idx < 0:
+            return
+        self.jobs.pmdata.restart(idx)
+
     def initialize_settings(self):
         isthubnails = INI.value("thubnails")
         bisthubnails = True if isthubnails == 'true' else False
@@ -169,9 +201,11 @@ class DownloadWidget(Qw.QWidget):
             INI.setValue("save_path", path)
 
     def update_youtube_dl(self):
-        params = ['--update', '--no-check-certificate']
-        self.disable_buttons()
-        self.start_process(params)
+        result = os.popen(
+            f'{YOUTUBE_DL_EXE_PATH} --update --no-check-certificate')
+        final = result.read()
+        Qw.QMessageBox.information(
+            self, "youtube-dl update Finished", final.strip())
 
     def disable_buttons(self):
         self.bexec.setEnabled(False)
@@ -232,67 +266,10 @@ class DownloadWidget(Qw.QWidget):
             return
         pars = self.create_parameters()
         pars.append(url)
-        # print(YOUTUBE_DL_EXE_PATH, pars, url)
-        self.job.execute(
-            YOUTUBE_DL_EXE_PATH,
-            pars,
-            url,
-            self.save_path.text(),
-            parsers=Parsers(progress=youtubedl_percent_parser,
-                            data=extract_list_vars),
-        )
-
-    def on_bexec_clicked_old(self):
-        self.update_settings_on_run()
-        if not self.check_before_run():
-            return
-        os.chdir(self.save_path.text())
-        params = self.create_parameters()
-        self.message(f"youtub-dl parameters: {params}")
-        self.start_process(params)
+        self.jobs.start(YOUTUBE_DL_EXE_PATH, pars, self.save_path.text())
 
     def message(self, s):
         self.update_log += f'{s}\n'
-        # self.statusBar().showMessage(s)
-
-    def start_process(self, pars):
-        if self.p is None:
-            self.disable_buttons()
-            self.p = Qc.QProcess()
-
-            self.p.readyReadStandardOutput.connect(self.handle_stdout)
-            self.p.readyReadStandardError.connect(self.handle_stderr)
-            self.p.stateChanged.connect(self.handle_state)
-            self.p.finished.connect(self.process_finished)
-
-            self.p.start(YOUTUBE_DL_EXE_PATH, pars)
-
-    def handle_stdout(self):
-        data = self.p.readAllStandardOutput()
-        stdout = bytes(data).decode("utf8", errors='ignore')
-        self.message(stdout)
-
-    def handle_stderr(self):
-        data = self.p.readAllStandardError()
-        stderr = bytes(data).decode("utf8", errors='ignore')
-        self.message(stderr)
-
-    def handle_state(self, state):
-        states = {
-            Qc.QProcess.ProcessState.NotRunning: 'Not running',
-            Qc.QProcess.ProcessState.Starting: 'Starting',
-            Qc.QProcess.ProcessState.Running: 'Running',
-        }
-        state_name = states[state]
-        # self.message(f"State changed: {state_name}")
-
-    def process_finished(self):
-        # self.message("Process finished.")
-        self.enable_buttons()
-        self.url.setPlainText('')
-        self.p = None
-        Qw.QMessageBox.information(
-            self, "youtube-dl update Finished", self.update_log)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():
