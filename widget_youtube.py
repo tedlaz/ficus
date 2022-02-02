@@ -17,8 +17,8 @@ class ProgressBarDelegate(Qw.QStyledItemDelegate):
         rect = Qc.QRect(option.rect)
         rect.setWidth(width)
         # rect.setHeight(option.rect.height() / 2)
-        rect.setTop(rect.top() + 4)
-        rect.setBottom(rect.bottom() - 4)
+        rect.setTop(rect.top() + 5)
+        rect.setBottom(rect.bottom() - 5)
         # rect.setLeft(rect.left() + 4)
         # rect.setRight(rect.right() - 4)
         brush = Qg.QBrush()
@@ -82,7 +82,7 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.setSelectionMode(Qw.QAbstractItemView.NoSelection)
         self.runinfo.setContextMenuPolicy(Qc.Qt.CustomContextMenu)
         self.runinfo.customContextMenuRequested.connect(self.on_context)
-        self.runinfo.setColumnWidth(1, 350)
+        self.runinfo.setColumnWidth(0, 50)
         # self.runinfo.setShowGrid(False)
         self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.resizeRowsToContents()
@@ -136,7 +136,7 @@ class DownloadWidget(Qw.QWidget):
 
     def on_context(self, point):
         acre = Qg.QAction(
-            'terminate',
+            'stop',
             self,
             statusTip='terminate job',
             triggered=self.terminate

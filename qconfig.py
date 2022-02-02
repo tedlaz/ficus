@@ -21,8 +21,13 @@ thubnails=true
 metadata=false
 typoi=mp3
 output=title
-encoding=WINDOWS-1253
 videoformat=avi mp4 mkv
+
+[Tprocess]
+error=#f9a2ac
+running=#6ef1e7
+finished=#91de67
+encoding=WINDOWS-1253
 
 [Typoi]
 video=
@@ -56,4 +61,5 @@ def ini2dic(mainkey):
 
 typoi = ini2dic('typoi')
 output = ini2dic('output')
+TPROCESS_INI = ini2dic('tprocess')
 videoformat = INI.value('videoformat').split()

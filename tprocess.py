@@ -6,8 +6,10 @@ from collections import namedtuple
 from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 
+from qconfig import TPROCESS_INI
+
 pre = re.compile('\[download\]( +)(\d+.\d+)%', re.M)
-ENCODING = "WINDOWS-1253"
+
 # ENCODING = "utf8"
 
 
@@ -45,14 +47,14 @@ PROCESS_STATES = {
 }
 
 STATUS_COLORS = {
-    Qc.QProcess.NotRunning: "#67aade",
+    Qc.QProcess.NotRunning: TPROCESS_INI['finished'][0],
     Qc.QProcess.Starting: "#fdbf6f",
     Qc.QProcess.Running: "#91de67",
 }
 
 COLORS = {
-    True: Qg.QColor("#91de67"),
-    False: Qg.QColor("#67aade")
+    True: Qg.QColor(TPROCESS_INI['running'][0]),
+    False: Qg.QColor(TPROCESS_INI['finished'][0])
 }
 
 
@@ -102,7 +104,7 @@ class TProcess:
     @property
     def color(self):
         if len(self.err) > 0:
-            return Qg.QColor("#f9a2ac")
+            return Qg.QColor(TPROCESS_INI['error'][0])
         return COLORS[self.is_running]
 
     def handle_percent(self, std_out_text):
@@ -150,7 +152,8 @@ class TProcess:
 
     def handle_stdout(self):
         data = self._process.readAllStandardOutput()
-        sdata = bytes(data).decode(ENCODING, errors='replace')
+        sdata = bytes(data).decode(
+            TPROCESS_INI['encoding'][0], errors='replace')
         self._std_outs.append(sdata)
         self._info = filter_text(sdata, self._info)
         self.handle_percent(sdata)
@@ -158,7 +161,8 @@ class TProcess:
 
     def handle_stderr(self):
         data = self._process.readAllStandardError()
-        sdata = bytes(data).decode(ENCODING, errors='ignore')
+        sdata = bytes(data).decode(
+            TPROCESS_INI['encoding'][0], errors='ignore')
         self._std_errs.append(sdata)
         self._info = f'{self._pars[-1]} error'
         self._percent.append(100)
