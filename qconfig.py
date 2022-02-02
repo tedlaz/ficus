@@ -21,6 +21,7 @@ thubnails=true
 metadata=false
 typoi=mp3
 output=title
+encoding=WINDOWS-1253
 videoformat=avi mp4 mkv
 
 [Typoi]
@@ -32,7 +33,6 @@ default=
 title=--output %(title)s.%(ext)s
 title-artist=--output %(title)s-%(artist)s.%(ext)s
 artist-title=--output %(artist)s-%(title)s.%(ext)s
-
 """
 
 if not os.path.isfile(INI_PATH):

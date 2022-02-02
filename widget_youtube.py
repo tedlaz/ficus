@@ -16,6 +16,11 @@ class ProgressBarDelegate(Qw.QStyledItemDelegate):
         width = option.rect.width() * data / 100
         rect = Qc.QRect(option.rect)
         rect.setWidth(width)
+        # rect.setHeight(option.rect.height() / 2)
+        rect.setTop(rect.top() + 4)
+        rect.setBottom(rect.bottom() - 4)
+        # rect.setLeft(rect.left() + 4)
+        # rect.setRight(rect.right() - 4)
         brush = Qg.QBrush()
         brush.setColor(color)
         brush.setStyle(Qc.Qt.SolidPattern)
@@ -78,7 +83,7 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.setContextMenuPolicy(Qc.Qt.CustomContextMenu)
         self.runinfo.customContextMenuRequested.connect(self.on_context)
         self.runinfo.setColumnWidth(1, 350)
-        self.runinfo.setShowGrid(False)
+        # self.runinfo.setShowGrid(False)
         self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.resizeRowsToContents()
 
@@ -229,7 +234,6 @@ class DownloadWidget(Qw.QWidget):
         if not self.save_path.text():
             Qw.QMessageBox.critical(
                 self, "Error", "Save path not set.")
-            self.message("Save path not set.")
             return False
         return True
 
@@ -269,7 +273,7 @@ class DownloadWidget(Qw.QWidget):
         self.jobs.start(YOUTUBE_DL_EXE_PATH, pars, self.save_path.text())
 
     def message(self, s):
-        self.update_log += f'{s}\n'
+        Qw.QMessageBox.information(self, "info", f'{s}')
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasText():

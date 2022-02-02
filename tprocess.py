@@ -2,12 +2,13 @@ import os
 import re
 import uuid
 from collections import namedtuple
-from unicodedata import name
 
 from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 
 pre = re.compile('\[download\]( +)(\d+.\d+)%', re.M)
+ENCODING = "WINDOWS-1253"
+# ENCODING = "utf8"
 
 
 def youtubedl_percent_parser(text2parse) -> float:
@@ -101,7 +102,7 @@ class TProcess:
     @property
     def color(self):
         if len(self.err) > 0:
-            return Qg.QColor("#f71010")
+            return Qg.QColor("#f9a2ac")
         return COLORS[self.is_running]
 
     def handle_percent(self, std_out_text):
@@ -149,7 +150,7 @@ class TProcess:
 
     def handle_stdout(self):
         data = self._process.readAllStandardOutput()
-        sdata = bytes(data).decode("utf8", errors='ignore')
+        sdata = bytes(data).decode(ENCODING, errors='replace')
         self._std_outs.append(sdata)
         self._info = filter_text(sdata, self._info)
         self.handle_percent(sdata)
@@ -157,7 +158,7 @@ class TProcess:
 
     def handle_stderr(self):
         data = self._process.readAllStandardError()
-        sdata = bytes(data).decode("utf8", errors='ignore')
+        sdata = bytes(data).decode(ENCODING, errors='ignore')
         self._std_errs.append(sdata)
         self._info = f'{self._pars[-1]} error'
         self._percent.append(100)
