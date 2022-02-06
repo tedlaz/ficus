@@ -10,8 +10,6 @@ from qconfig import TPROCESS_INI
 
 pre = re.compile('\[download\]( +)(\d+.\d+)%', re.M)
 
-# ENCODING = "utf8"
-
 
 def youtubedl_percent_parser(text2parse) -> float:
     """
@@ -83,6 +81,7 @@ class TProcess:
         self._states = []
         self._finished = []
         self._percent = []
+        self._last_std = ('out', '')
         if self._down_dir != '':
             os.chdir(self._down_dir)
         self._process = Qc.QProcess()
@@ -103,7 +102,7 @@ class TProcess:
 
     @property
     def color(self):
-        if len(self.err) > 0:
+        if self._last_std[0] == 'error':
             return Qg.QColor(TPROCESS_INI['error'][0])
         return COLORS[self.is_running]
 
@@ -147,7 +146,6 @@ class TProcess:
         return self._percent[-1]
 
     def last_data(self):
-        # return PData(self.out, self.err, self.state, self.finished, self.percent)
         return (self.percent, self.info)
 
     def handle_stdout(self):
@@ -155,6 +153,7 @@ class TProcess:
         sdata = bytes(data).decode(
             TPROCESS_INI['encoding'][0], errors='replace')
         self._std_outs.append(sdata)
+        self._last_std = ('out', sdata)
         self._info = filter_text(sdata, self._info)
         self.handle_percent(sdata)
         self._callback(self)
@@ -164,8 +163,9 @@ class TProcess:
         sdata = bytes(data).decode(
             TPROCESS_INI['encoding'][0], errors='ignore')
         self._std_errs.append(sdata)
+        self._last_std = ('error', sdata)
         self._info = f'{self._pars[-1]} error'
-        self._percent.append(100)
+        # self._percent.append(100)
         self._callback(self)
 
     def handle_state(self, state):
@@ -185,10 +185,6 @@ class TProcessManager:
         self._keys = []
         self._processes = {}
         self._callback = callback_function
-    #     self.download_dir = ''
-
-    # def set_download_dir(self, download_dir):
-    #     self.download_dir = download_dir
 
     @property
     def column_titles(self):
@@ -289,6 +285,7 @@ class TModel(Qc.QAbstractTableModel):
     def data(self, index, role):
         if not index.isValid():
             return None
+
         if role == Qc.Qt.DisplayRole:
             key = self.pmdata._keys[index.row()]
             data = self.pmdata.last_data(key)

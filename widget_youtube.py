@@ -4,30 +4,27 @@ from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
-import tprocess as tpr
+import ted_qprocess as tpr
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
 from version import VERSION
 
 
 class ProgressBarDelegate(Qw.QStyledItemDelegate):
     def paint(self, painter, option, index):
-        data = index.model().data(index, Qc.Qt.DisplayRole)
-        color = Qg.QColor(index.model().pmdata.color(index.row()))
+        cdata = index.model().data(index, Qc.Qt.DisplayRole)
+        data = index.model().pm.get_process_by_index(index.row()).percent
+        color = Qg.QColor(
+            index.model().pm.get_process_by_index(index.row()).color)
         width = option.rect.width() * data / 100
         rect = Qc.QRect(option.rect)
         rect.setWidth(width)
-        # rect.setHeight(option.rect.height() / 2)
-        rect.setTop(rect.top() + 5)
-        rect.setBottom(rect.bottom() - 5)
-        # rect.setLeft(rect.left() + 4)
-        # rect.setRight(rect.right() - 4)
         brush = Qg.QBrush()
         brush.setColor(color)
         brush.setStyle(Qc.Qt.SolidPattern)
         painter.fillRect(rect, brush)
         pen = Qg.QPen()
         pen.setColor(Qc.Qt.black)
-        painter.drawText(option.rect, Qc.Qt.AlignCenter, f"{int(data)}%")
+        painter.drawText(option.rect, Qc.Qt.AlignLeft, cdata)
 
 
 class DownloadWidget(Qw.QWidget):
@@ -38,8 +35,8 @@ class DownloadWidget(Qw.QWidget):
 
         self.jobs = tpr.TModel()
 
-        self.setMinimumHeight(200)
-        self.setMinimumWidth(400)
+        self.setMinimumHeight(400)
+        self.setMinimumWidth(600)
         self.clipboard = ''
 
         # Widgets
@@ -73,6 +70,9 @@ class DownloadWidget(Qw.QWidget):
         self.bupdateyutubedl = Qw.QPushButton('update', self)
         self.bupdateyutubedl.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
 
+        self.bopen_dir = Qw.QPushButton('open dir', self)
+        self.bopen_dir.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
+
         self.bexec = Qw.QPushButton('Go', self)
         self.bexec.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
 
@@ -82,13 +82,14 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.setSelectionMode(Qw.QAbstractItemView.NoSelection)
         self.runinfo.setContextMenuPolicy(Qc.Qt.CustomContextMenu)
         self.runinfo.customContextMenuRequested.connect(self.on_context)
-        self.runinfo.setColumnWidth(0, 50)
+        self.runinfo.setColumnWidth(0, 60)
+        self.runinfo.setColumnWidth(1, 200)
         # self.runinfo.setShowGrid(False)
         self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.resizeRowsToContents()
 
         delegate = ProgressBarDelegate()
-        self.runinfo.setItemDelegateForColumn(0, delegate)
+        self.runinfo.setItemDelegateForColumn(2, delegate)
 
         # Layouts
         vlayout = Qw.QVBoxLayout(self)
@@ -107,6 +108,7 @@ class DownloadWidget(Qw.QWidget):
         button_layout.addWidget(self.chkthubnails)
         button_layout.addWidget(self.chckmetadata)
         button_layout.addWidget(self.bupdateyutubedl)
+        button_layout.addWidget(self.bopen_dir)
         sp2 = Qw.QSpacerItem(40, 20, Qw.QSizePolicy.Policy.Expanding,
                              Qw.QSizePolicy.Policy.Minimum)
         button_layout.addItem(sp2)
@@ -132,20 +134,19 @@ class DownloadWidget(Qw.QWidget):
         # Connections
         self.bpath.clicked.connect(self.update_path)
         self.bupdateyutubedl.clicked.connect(self.update_youtube_dl)
+        self.bopen_dir.clicked.connect(self.open_dir)
         self.bexec.clicked.connect(self.on_bexec_clicked)
+
+    def open_dir(self):
+        if self.check_before_run():
+            os.startfile(self.save_path.text())
 
     def on_context(self, point):
         acre = Qg.QAction(
             'stop',
             self,
-            statusTip='terminate job',
+            statusTip='stop job',
             triggered=self.terminate
-        )
-        arem = Qg.QAction(
-            'remove',
-            self,
-            statusTip='remove job',
-            triggered=self.remove
         )
         arestart = Qg.QAction(
             'restart',
@@ -153,10 +154,24 @@ class DownloadWidget(Qw.QWidget):
             statusTip='restart job',
             triggered=self.restart
         )
+        arem = Qg.QAction(
+            'remove',
+            self,
+            statusTip='remove job',
+            triggered=self.remove
+        )
+        aremfin = Qg.QAction(
+            'remove all finished',
+            self,
+            statusTip='remove finished jobs',
+            triggered=self.remove_finished
+        )
+
         menu = Qw.QMenu("Menu", self)
         menu.addAction(acre)
         menu.addAction(arestart)
         menu.addAction(arem)
+        menu.addAction(aremfin)
         menu.exec(self.runinfo.mapToGlobal(point))
 
     def terminate(self):
@@ -164,20 +179,22 @@ class DownloadWidget(Qw.QWidget):
         # print(idx)
         if idx < 0:
             return
-        self.jobs.pmdata.terminate(idx)
+        self.jobs.pm.terminate_process(idx)
 
     def remove(self):
         idx = self.runinfo.currentIndex().row()
         if idx < 0:
             return
-        self.jobs.pmdata.terminate(idx)
-        self.jobs.pmdata.remove(idx)
+        self.jobs.pm.remove_process(idx)
+
+    def remove_finished(self):
+        self.jobs.pm.remove_finished()
 
     def restart(self):
         idx = self.runinfo.currentIndex().row()
         if idx < 0:
             return
-        self.jobs.pmdata.restart(idx)
+        self.jobs.pm.restart_process(idx)
 
     def initialize_settings(self):
         isthubnails = INI.value("thubnails")

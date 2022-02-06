@@ -24,9 +24,13 @@ output=title
 videoformat=avi mp4 mkv
 
 [Tprocess]
-error=#f9a2ac
-running=#6ef1e7
-finished=#91de67
+starting=#97f5f5
+running=#ae90ff
+notrunning=#ffbb6c
+error=#ff6c6c
+stopped=#ff6cdb
+finished=#7be263
+
 encoding=WINDOWS-1253
 
 [Typoi]

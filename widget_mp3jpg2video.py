@@ -92,13 +92,30 @@ class UploadToYoutubeWidget(Qw.QWidget):
             "stillimage",
             "-c:a",
             "copy",
-            "-b:a",
-            "192k",
             "-pix_fmt",
             "yuv420p",
             "-shortest",
             fpaths['out'],
         ]
+        # pars = [
+        #     "-r",
+        #     "1",
+        #     "-loop",
+        #     "1",
+        #     "-y",
+        #     "-i",
+        #     fpaths['image'],
+        #     "-i",
+        #     fpaths['mp3'],
+        #     "-c:a",
+        #     "copy",
+        #     "-r",
+        #     "1",
+        #     "-vcodec",
+        #     "libx264",
+        #     "-shortest",
+        #     fpaths['out'],
+        # ]
 
         self.mp3.setPlainText('')
         if self.p is None:
@@ -137,7 +154,5 @@ class UploadToYoutubeWidget(Qw.QWidget):
 
     def process_finished(self):
         self.message("Process finished.")
-        # self.enable_buttons()
-        # self.url.setPlainText('')
         self.p = None
         self.message("youtube-dl update Finished")
