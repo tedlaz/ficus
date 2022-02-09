@@ -10,23 +10,6 @@ from progress_bar_delegate import ProgressBarDelegate
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
 from version import VERSION
 
-# class ProgressBarDelegate(Qw.QStyledItemDelegate):
-#     def paint(self, painter, option, index):
-#         cdata = index.model().data(index, Qc.Qt.DisplayRole)
-#         data = index.model().pm.get_process_by_index(index.row()).percent
-#         color = Qg.QColor(
-#             index.model().pm.get_process_by_index(index.row()).color)
-#         width = option.rect.width() * data / 100
-#         rect = Qc.QRect(option.rect)
-#         rect.setWidth(width)
-#         brush = Qg.QBrush()
-#         brush.setColor(color)
-#         brush.setStyle(Qc.Qt.SolidPattern)
-#         painter.fillRect(rect, brush)
-#         pen = Qg.QPen()
-#         pen.setColor(Qc.Qt.black)
-#         painter.drawText(option.rect, Qc.Qt.AlignLeft, cdata)
-
 
 class DownloadWidget(Qw.QWidget):
     def __init__(self):
