@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 from PySide6 import QtCore as Qc
@@ -54,7 +55,8 @@ class TedQProcess:
         self.percent = 0
 
     def start(self):
-        os.chdir(self._active_directory)
+        if self._active_directory:
+            os.chdir(self._active_directory)
         self.percent = 0
 
         self._qprocess = Qc.QProcess()
@@ -122,13 +124,6 @@ class TedQProcess:
 
 class ProcessManager:
     """Create and manage TedProcesses
-
-    columns : {
-        'state': {'field': 'state', 'function': None},
-        'filename': {'field': 'test', 'function': filtertest },
-        'message': {'field': 'out', 'function': None},
-        'errors': {'''err'
-        }
     """
 
     def __init__(self, callback, columns):
@@ -205,8 +200,9 @@ class ProcessManager:
     def restart_process(self, index):
         tprocess = self.get_process_by_index(index)
         if tprocess:
-            if not tprocess._qprocess:
-                tprocess.start()
+            if tprocess._qprocess:
+                tprocess.terminate()
+            tprocess.start()
 
 
 class TModel(Qc.QAbstractTableModel):
@@ -215,18 +211,9 @@ class TModel(Qc.QAbstractTableModel):
     """
     status = Qc.Signal(str)
 
-    def __init__(self):
+    def __init__(self, fields: dict):
         super().__init__()
-        self.pm = ProcessManager(
-            self.lmodel_callback,
-            {
-                # 'percent': 'percent',
-                'state': 'state',
-                'filename': 'filename',
-                'message': 'out_err',
-                # 'errors': 'err',
-            }
-        )
+        self.pm = ProcessManager(self.lmodel_callback, fields)
 
     def start(self, command, params, save_path):
         self.pm.new_process(command, params, save_path)

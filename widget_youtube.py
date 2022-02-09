@@ -5,26 +5,27 @@ from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
 import ted_qprocess as tpr
+# from button_delegate import ButtonDelegate
+from progress_bar_delegate import ProgressBarDelegate
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
 from version import VERSION
 
-
-class ProgressBarDelegate(Qw.QStyledItemDelegate):
-    def paint(self, painter, option, index):
-        cdata = index.model().data(index, Qc.Qt.DisplayRole)
-        data = index.model().pm.get_process_by_index(index.row()).percent
-        color = Qg.QColor(
-            index.model().pm.get_process_by_index(index.row()).color)
-        width = option.rect.width() * data / 100
-        rect = Qc.QRect(option.rect)
-        rect.setWidth(width)
-        brush = Qg.QBrush()
-        brush.setColor(color)
-        brush.setStyle(Qc.Qt.SolidPattern)
-        painter.fillRect(rect, brush)
-        pen = Qg.QPen()
-        pen.setColor(Qc.Qt.black)
-        painter.drawText(option.rect, Qc.Qt.AlignLeft, cdata)
+# class ProgressBarDelegate(Qw.QStyledItemDelegate):
+#     def paint(self, painter, option, index):
+#         cdata = index.model().data(index, Qc.Qt.DisplayRole)
+#         data = index.model().pm.get_process_by_index(index.row()).percent
+#         color = Qg.QColor(
+#             index.model().pm.get_process_by_index(index.row()).color)
+#         width = option.rect.width() * data / 100
+#         rect = Qc.QRect(option.rect)
+#         rect.setWidth(width)
+#         brush = Qg.QBrush()
+#         brush.setColor(color)
+#         brush.setStyle(Qc.Qt.SolidPattern)
+#         painter.fillRect(rect, brush)
+#         pen = Qg.QPen()
+#         pen.setColor(Qc.Qt.black)
+#         painter.drawText(option.rect, Qc.Qt.AlignLeft, cdata)
 
 
 class DownloadWidget(Qw.QWidget):
@@ -33,7 +34,13 @@ class DownloadWidget(Qw.QWidget):
         self.setAcceptDrops(True)
         self.setWindowTitle(f'qYoutube-dl (version : {VERSION})')
 
-        self.jobs = tpr.TModel()
+        self.jobs = tpr.TModel({
+            # 'percent': 'percent',
+            'state': 'state',
+            'filename': 'filename',
+            'message': 'out_err',
+            # 'errors': 'err',
+        })
 
         self.setMinimumHeight(400)
         self.setMinimumWidth(600)
@@ -88,6 +95,9 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.resizeRowsToContents()
 
+        # bdelegate = ButtonDelegate()
+        # self.runinfo.setItemDelegateForColumn(0, bdelegate)
+
         delegate = ProgressBarDelegate()
         self.runinfo.setItemDelegateForColumn(2, delegate)
 
@@ -136,6 +146,14 @@ class DownloadWidget(Qw.QWidget):
         self.bupdateyutubedl.clicked.connect(self.update_youtube_dl)
         self.bopen_dir.clicked.connect(self.open_dir)
         self.bexec.clicked.connect(self.on_bexec_clicked)
+        # bdelegate.delegateButtonPressed.connect(
+        #     self.on_delegate_button_pressed)
+
+    def on_delegate_button_pressed(self, index):
+
+        print('"{}" delegate button pressed'.format(
+            index.data(Qc.Qt.DisplayRole)))
+        self.restart()
 
     def open_dir(self):
         if self.check_before_run():
