@@ -1,14 +1,34 @@
 import os
+from time import sleep
 
 from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
 import ted_qprocess as tpr
+from extract_video_from_html import get_video_merlin, get_video_url_filmatic
 # from button_delegate import ButtonDelegate
 from progress_bar_delegate import ProgressBarDelegate
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
 from version import VERSION
+
+
+class Worker(Qc.QObject):
+    finished = Qc.Signal()
+    progress = Qc.Signal(int)
+
+    def __init__(self, process, process_index):
+        super().__init__()
+        self.process = process
+        self.process_index = process_index
+
+    def run(self):
+        """Long-running task."""
+        while self.process.percent < 99:
+            sleep(11)
+            self.progress.emit(self.process_index)
+
+        self.finished.emit()
 
 
 class DownloadWidget(Qw.QWidget):
@@ -155,6 +175,12 @@ class DownloadWidget(Qw.QWidget):
             statusTip='restart job',
             triggered=self.restart
         )
+        arestartafter5 = Qg.QAction(
+            'restart continusly',
+            self,
+            statusTip='restart after 5 seconds',
+            triggered=self.restart_after5
+        )
         arem = Qg.QAction(
             'remove',
             self,
@@ -171,6 +197,7 @@ class DownloadWidget(Qw.QWidget):
         menu = Qw.QMenu("Menu", self)
         menu.addAction(acre)
         menu.addAction(arestart)
+        menu.addAction(arestartafter5)
         menu.addAction(arem)
         menu.addAction(aremfin)
         menu.exec(self.runinfo.mapToGlobal(point))
@@ -279,6 +306,10 @@ class DownloadWidget(Qw.QWidget):
         for line in url_text.splitlines():
             line = line.strip()
             if line:
+                if line.startswith('https://filmatic.online/'):
+                    line = get_video_url_filmatic(line)
+                if line.startswith(('https://merlins.gr')):
+                    line = get_video_merlin(line)
                 self.run_command(line)
         self.url.setPlainText('')
 
@@ -301,3 +332,24 @@ class DownloadWidget(Qw.QWidget):
 
     def dropEvent(self, event):
         self.url.appendPlainText(event.mimeData().text())
+
+    def report_progress(self, idx):
+        self.jobs.pm.restart_process(idx)
+
+    def restart_after5(self):
+        idx = self.runinfo.currentIndex().row()
+        # print(idx)
+        if idx < 0:
+            return
+        process = self.jobs.pm.get_process_by_index(idx)
+        self.threa = Qc.QThread()
+        self.worker = Worker(process, idx)
+        self.worker.moveToThread(self.threa)
+        # Step 5: Connect signals and slots
+        self.threa.started.connect(self.worker.run)
+        self.worker.finished.connect(self.threa.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.threa.finished.connect(self.threa.deleteLater)
+        self.worker.progress.connect(self.report_progress)
+        # Step 6: Start the thread
+        self.threa.start()
