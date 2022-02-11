@@ -6,7 +6,7 @@ from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
 import ted_qprocess as tpr
-from extract_video_from_html import get_video_merlin, get_video_url_filmatic
+from extract_video_from_html import get_video_url_filmatic
 # from button_delegate import ButtonDelegate
 from progress_bar_delegate import ProgressBarDelegate
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
@@ -17,21 +17,23 @@ class Worker(Qc.QObject):
     finished = Qc.Signal()
     progress = Qc.Signal(int)
 
-    def __init__(self, process, process_index):
+    def __init__(self, process, process_index: int, wait_seconds: int, wstatus):
         super().__init__()
         self.process = process
         self.process_index = process_index
+        self.wait_seconds = wait_seconds
+        self.wstatus = wstatus
 
     def run(self):
         """Long-running task."""
-        while self.process.percent < 99:
-            sleep(11)
+        while self.process.percent < 99 and self.wstatus():
             self.progress.emit(self.process_index)
-
+            sleep(self.wait_seconds)
         self.finished.emit()
 
 
 class DownloadWidget(Qw.QWidget):
+
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
@@ -83,11 +85,14 @@ class DownloadWidget(Qw.QWidget):
         self.bopen_dir = Qw.QPushButton('open dir', self)
         self.bopen_dir.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
 
-        self.bexec = Qw.QPushButton('Go', self)
+        self.bexec = Qw.QPushButton('Download', self)
         self.bexec.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
 
         self.runinfo = Qw.QTableView()
         self.runinfo.setModel(self.jobs)
+        # self.runinfo.resizeColumnsToContents()
+        self.runinfo.resizeRowsToContents()
+        self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.setAlternatingRowColors(True)
         self.runinfo.setSelectionMode(Qw.QAbstractItemView.NoSelection)
         self.runinfo.setContextMenuPolicy(Qc.Qt.CustomContextMenu)
@@ -95,8 +100,6 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.setColumnWidth(0, 60)
         self.runinfo.setColumnWidth(1, 200)
         # self.runinfo.setShowGrid(False)
-        self.runinfo.horizontalHeader().setStretchLastSection(True)
-        self.runinfo.resizeRowsToContents()
 
         # bdelegate = ButtonDelegate()
         # self.runinfo.setItemDelegateForColumn(0, bdelegate)
@@ -137,8 +140,7 @@ class DownloadWidget(Qw.QWidget):
         self.save_path.setToolTip('Set save path')
         self.bpath.setToolTip('Set save path')
         self.cb.setToolTip('Set file format (video, mp3)')
-        self.cboutput.setToolTip(
-            'Best option is "title"')
+        self.cboutput.setToolTip('Best option is "title"')
         # self.chkthubnails.setToolTip('Download thubnails')
         self.chckmetadata.setToolTip(
             'Download metadata \n Be warned: Sometimes blocks downloading')
@@ -151,6 +153,10 @@ class DownloadWidget(Qw.QWidget):
         self.bexec.clicked.connect(self.on_bexec_clicked)
         # bdelegate.delegateButtonPressed.connect(
         #     self.on_delegate_button_pressed)
+        self.worker_status = False
+
+    def wstatus(self):
+        return self.worker_status
 
     def on_delegate_button_pressed(self, index):
 
@@ -176,10 +182,10 @@ class DownloadWidget(Qw.QWidget):
             triggered=self.restart
         )
         arestartafter5 = Qg.QAction(
-            'restart continusly',
+            'restart continously',
             self,
             statusTip='restart after 5 seconds',
-            triggered=self.restart_after5
+            triggered=self.restart_after_seconds
         )
         arem = Qg.QAction(
             'remove',
@@ -208,21 +214,25 @@ class DownloadWidget(Qw.QWidget):
         if idx < 0:
             return
         self.jobs.pm.terminate_process(idx)
+        self.worker_status = False
 
     def remove(self):
         idx = self.runinfo.currentIndex().row()
         if idx < 0:
             return
         self.jobs.pm.remove_process(idx)
+        self.worker_status = False
 
     def remove_finished(self):
         self.jobs.pm.remove_finished()
+        self.worker_status = False
 
     def restart(self):
         idx = self.runinfo.currentIndex().row()
         if idx < 0:
             return
         self.jobs.pm.restart_process(idx)
+        self.worker_status = False
 
     def initialize_settings(self):
         isthubnails = INI.value("thubnails")
@@ -308,8 +318,8 @@ class DownloadWidget(Qw.QWidget):
             if line:
                 if line.startswith('https://filmatic.online/'):
                     line = get_video_url_filmatic(line)
-                if line.startswith(('https://merlins.gr')):
-                    line = get_video_merlin(line)
+                # if line.startswith(('https://merlins.gr')):
+                #     line = get_video_merlin(line)
                 self.run_command(line)
         self.url.setPlainText('')
 
@@ -331,19 +341,23 @@ class DownloadWidget(Qw.QWidget):
             event.ignore()
 
     def dropEvent(self, event):
-        self.url.appendPlainText(event.mimeData().text())
+        dropped_txt = event.mimeData().text()
+        ftext = dropped_txt.split('\n')
+        for line in ftext:
+            if line.startswith('http'):
+                self.url.appendPlainText(line)
 
     def report_progress(self, idx):
         self.jobs.pm.restart_process(idx)
 
-    def restart_after5(self):
+    def restart_after_seconds(self):
         idx = self.runinfo.currentIndex().row()
         # print(idx)
         if idx < 0:
             return
         process = self.jobs.pm.get_process_by_index(idx)
         self.threa = Qc.QThread()
-        self.worker = Worker(process, idx)
+        self.worker = Worker(process, idx, 11, self.wstatus)
         self.worker.moveToThread(self.threa)
         # Step 5: Connect signals and slots
         self.threa.started.connect(self.worker.run)
@@ -351,5 +365,5 @@ class DownloadWidget(Qw.QWidget):
         self.worker.finished.connect(self.worker.deleteLater)
         self.threa.finished.connect(self.threa.deleteLater)
         self.worker.progress.connect(self.report_progress)
-        # Step 6: Start the thread
+        self.worker_status = True
         self.threa.start()

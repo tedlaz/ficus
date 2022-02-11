@@ -130,7 +130,6 @@ class ProcessManager:
         self._keys = []  # index of keys
         self._ted_qprocesses = {}
         self._callback = callback
-        # self._column_names = columns['column_names']
         self._columns = columns
 
     @property

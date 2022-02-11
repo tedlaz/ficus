@@ -22,6 +22,9 @@ metadata=false
 typoi=mp3
 output=title
 videoformat=avi mp4 mkv
+video_background_color=#000000
+video_size=360p(640x360)
+video_type=avi
 
 [Tprocess]
 starting=#97f5f5
@@ -42,6 +45,15 @@ default=
 title=--output %(title)s.%(ext)s
 title-artist=--output %(title)s-%(artist)s.%(ext)s
 artist-title=--output %(artist)s-%(title)s.%(ext)s
+
+[Videosizes]
+240p(426x240)=426 240
+360p(640x360)=640 360
+480p(854x480)=854 480
+720p(1280x720)=1280 720
+1080p(1920x1080)=1920 1080
+1440p(2560x1440)=2560 1440
+2160p(3840x2160)=3840 2160
 """
 
 if not os.path.isfile(INI_PATH):
@@ -67,3 +79,18 @@ typoi = ini2dic('typoi')
 output = ini2dic('output')
 TPROCESS_INI = ini2dic('tprocess')
 videoformat = INI.value('videoformat').split()
+
+
+def ini2dic_int_tuple(mainkey):
+    """
+    returns dictionary: {keyval1: [a1, a2, ...], keyval2: [b1, ..]}
+    """
+    fdict = {}
+    INI.beginGroup(mainkey)
+    for key in INI.allKeys():
+        fdict[key] = tuple([int(i) for i in INI.value(key).split()])
+    INI.endGroup()
+    return fdict
+
+
+VIDEOSIZES = ini2dic_int_tuple('Videosizes')
