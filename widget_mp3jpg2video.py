@@ -231,7 +231,7 @@ class UploadToYoutubeWidget(Qw.QWidget):
     def resize_image(self, img_path: str):
         size_index = self.vsize.currentText()
         color = INI.value("video_background_color", defaultValue='black')
-        return imre.resize(img_path, VIDEOSIZES[size_index], color)
+        return imre.resize(img_path, self.save_path.text(), VIDEOSIZES[size_index], color)
 
     def render(self):
         self.update_settings_on_run()
