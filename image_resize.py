@@ -13,14 +13,14 @@ def create_save_path(image_path: str, save_path: str, size) -> str:
 
 
 def resize(image_path, save_path: str, size, color):
-    canvas = Image.new('RGB', size, color).convert("RGBA")
-    image = Image.open(image_path).convert("RGBA")
+    canvas = Image.new('RGBA', size, color)
+    image = Image.open(image_path)
     if image.size == size:  # Dont do anything image is in proper size already
         return image_path
-    image.thumbnail(size)
+    image.thumbnail(size, Image.NEAREST)
     position = ((canvas.width - image.width)//2,
                 (canvas.height - image.height)//2)
-    canvas.paste(image, position)
+    canvas.paste(image, position, image)
     save_path = create_save_path(image_path, save_path, size)
     # Image.alpha_composite(canva, image).save(save)
     canvas.save(save_path)
@@ -28,4 +28,4 @@ def resize(image_path, save_path: str, size, color):
 
 
 if __name__ == '__main__':
-    resize('ted.jpg', (640, 320), 'red')
+    resize("C:\\Users\\tedla\Pictures\\ted.png", '', (640, 320), 'red')

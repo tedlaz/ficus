@@ -5,8 +5,9 @@ from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
 import image_resize as imre
-import ted_qprocess as tpr
-from button_delegate import ButtonDelegate
+# import ted_qprocess as tpr
+import ted_table_model as ttm
+from filter_functions import ffmpeg
 from qconfig import FFMPEG_PATH, INI, VIDEOSIZES, videoformat
 
 
@@ -16,13 +17,14 @@ class UploadToYoutubeWidget(Qw.QWidget):
         self.setAcceptDrops(True)
         layout = Qw.QVBoxLayout(self)
 
-        self.jobs = tpr.TModel({'state': 'state', 'message': 'out_err'})
+        self.jobs = ttm.TModel(
+            ['state', 'pid', 'ffmpeg info'],
+            {'ffmpeg info': ffmpeg})
 
         self.mp3 = Qw.QPlainTextEdit()
         self.mp3.setToolTip("Drag and drop or copy, mp3 and image files here")
         self.mp3.setMaximumHeight(100)
         self.mp3.setAcceptDrops(False)
-
         layout.addWidget(self.mp3)
 
         path_layout = Qw.QHBoxLayout()
@@ -68,17 +70,33 @@ class UploadToYoutubeWidget(Qw.QWidget):
         # hlay.addItem(sp2)
 
         self.color_label = Qw.QLabel()
-        frame_style = Qw.QFrame.Sunken | Qw.QFrame.Panel
-        self.color_label.setFrameStyle(frame_style)
+        # self.color_label.setLineWidth(2)
+        self.color_label.setToolTip('Image background color')
+        # frame_style = Qw.QFrame.Sunken | Qw.QFrame.Panel
+        # self.color_label.setFrameStyle(frame_style)
+        self.color_label.setMinimumWidth(50)
         self.set_color2color_label()
-        self.color_button = Qw.QPushButton("color")
+        self.color_button = Qw.QToolButton()
+        self.color_button.setText('...')
+        self.color_button.setToolTip('Set background color')
+
+        self.bopen_dir = Qw.QPushButton('open dir', self)
+        self.bopen_dir.setFocusPolicy(Qc.Qt.FocusPolicy.NoFocus)
+        self.bopen_dir.clicked.connect(self.open_dir)
+
         hlay.addWidget(self.color_label)
         hlay.addWidget(self.color_button)
+        hlay.addWidget(self.bopen_dir)
 
+        sp2 = Qw.QSpacerItem(40, 20, Qw.QSizePolicy.Policy.Expanding,
+                             Qw.QSizePolicy.Policy.Minimum)
+        hlay.addItem(sp2)
         self.bexec = Qw.QPushButton("create videos")
         hlay.addWidget(self.bexec)
 
         self.log = Qw.QTableView()
+        self.log.setStyleSheet(
+            "QHeaderView::section { color: blue; }")
         self.log.setModel(self.jobs)
         self.log.setAlternatingRowColors(True)
         self.log.setSelectionMode(Qw.QAbstractItemView.NoSelection)
@@ -95,19 +113,23 @@ class UploadToYoutubeWidget(Qw.QWidget):
         self.bpath.clicked.connect(self.update_path)
         self.color_button.clicked.connect(self.set_color)
 
+    def open_dir(self):
+        os.startfile(self.save_path.text())
+
     def update_settings_on_run(self):
         INI.setValue("video_type", self.cb.currentText())
         INI.setValue("video_size", self.vsize.currentText())
 
     def set_color2color_label(self):
         color_name = INI.value("video_background_color", defaultValue='black')
+        # self.color_label.setFrameShape(Qw.QFrame.Box)
         # self.color_label.setText(color_name)
         color = Qg.QColor(color_name)
         self.color_label.setPalette(Qg.QPalette(color))
         self.color_label.setAutoFillBackground(True)
 
     def set_color(self):
-        old = self.color_label.text()
+        old = INI.value("video_background_color", defaultValue='black')
         color = Qw.QColorDialog.getColor(old, self, "Select Color")
 
         if color.isValid():
@@ -189,7 +211,7 @@ class UploadToYoutubeWidget(Qw.QWidget):
         dropped_txt = event.mimeData().text()
         ftext = dropped_txt.split('\n')
         for line in ftext:
-            if line.endswith(('.mp3', '.jpg', '.png')):
+            if line.lower().endswith(('.mp3', '.jpg', '.png')):
                 self.mp3.appendPlainText(line.replace('file:///', ''))
 
     def message(self, message):
@@ -204,7 +226,7 @@ class UploadToYoutubeWidget(Qw.QWidget):
             line = line.strip().replace('file:///', '')
             if line.endswith('.mp3'):
                 mp3_files.append(line)
-            if line.endswith(('.jpg', '.jpeg', '.png')):
+            if line.lower().endswith(('.jpg', '.jpeg', '.png')):
                 image_paths.append(self.resize_image(line))
 
         if (image_paths == []) or (mp3_files == []):
@@ -257,7 +279,7 @@ class UploadToYoutubeWidget(Qw.QWidget):
                 "-shortest",
                 fpath['out'],
             ]
-            self.jobs.start(FFMPEG_PATH, pars, '')
+            self.jobs.start(fpath['out'], FFMPEG_PATH, pars, '')
         # pars = [
         #     "-r",
         #     "1",

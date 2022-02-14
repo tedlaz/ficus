@@ -1,4 +1,3 @@
 pyside6
-requests-html
 Pillow
 pyinstaller

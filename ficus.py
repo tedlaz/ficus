@@ -1,5 +1,3 @@
-#!/usr/bin/python
-import os
 import sys
 
 from PySide6 import QtCore as Qc
@@ -22,7 +20,7 @@ class MainWindow(Qw.QMainWindow):
         self.upwidget = UploadToYoutubeWidget()
         self.tab1.addTab(self.downwidget, "Download")
         self.tab1.addTab(self.upwidget, "mp3 + image To Video")
-        self.downwidget.jobs.status.connect(self.statusBar().showMessage)
+        # self.downwidget.jobs.status.connect(self.statusBar().showMessage)
         self.show()
 
 

@@ -5,31 +5,13 @@ from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
-import ted_qprocess as tpr
-from extract_video_from_html import get_video_url_filmatic
+import filter_functions as ffun
+import ted_table_model as ttm
+# from extract_video_from_html import get_video_url_filmatic
 # from button_delegate import ButtonDelegate
 from progress_bar_delegate import ProgressBarDelegate
 from qconfig import INI, YOUTUBE_DL_EXE_PATH, output, typoi
 from version import VERSION
-
-
-class Worker(Qc.QObject):
-    finished = Qc.Signal()
-    progress = Qc.Signal(int)
-
-    def __init__(self, process, process_index: int, wait_seconds: int, wstatus):
-        super().__init__()
-        self.process = process
-        self.process_index = process_index
-        self.wait_seconds = wait_seconds
-        self.wstatus = wstatus
-
-    def run(self):
-        """Long-running task."""
-        while self.process.percent < 99 and self.wstatus():
-            self.progress.emit(self.process_index)
-            sleep(self.wait_seconds)
-        self.finished.emit()
 
 
 class DownloadWidget(Qw.QWidget):
@@ -39,13 +21,12 @@ class DownloadWidget(Qw.QWidget):
         self.setAcceptDrops(True)
         self.setWindowTitle(f'qYoutube-dl (version : {VERSION})')
 
-        self.jobs = tpr.TModel({
-            # 'percent': 'percent',
-            'state': 'state',
-            'filename': 'filename',
-            'message': 'out_err',
-            # 'errors': 'err',
-        })
+        self.jobs = ttm.TModel(
+            ['state', 'filename', 'log'],
+            {
+                'filename': ffun.filter_text_down_ffmpeg,
+                'percent': ffun.youtubedl_percent,
+            })
 
         self.setMinimumHeight(400)
         self.setMinimumWidth(600)
@@ -90,8 +71,9 @@ class DownloadWidget(Qw.QWidget):
 
         self.runinfo = Qw.QTableView()
         self.runinfo.setModel(self.jobs)
-        # self.runinfo.resizeColumnsToContents()
-        self.runinfo.resizeRowsToContents()
+        vheader = self.runinfo.verticalHeader()
+        vheader.setSectionResizeMode(Qw.QHeaderView.Fixed)
+        vheader.setDefaultSectionSize((1))
         self.runinfo.horizontalHeader().setStretchLastSection(True)
         self.runinfo.setAlternatingRowColors(True)
         self.runinfo.setSelectionMode(Qw.QAbstractItemView.NoSelection)
@@ -99,13 +81,9 @@ class DownloadWidget(Qw.QWidget):
         self.runinfo.customContextMenuRequested.connect(self.on_context)
         self.runinfo.setColumnWidth(0, 60)
         self.runinfo.setColumnWidth(1, 200)
-        # self.runinfo.setShowGrid(False)
-
-        # bdelegate = ButtonDelegate()
-        # self.runinfo.setItemDelegateForColumn(0, bdelegate)
 
         delegate = ProgressBarDelegate()
-        self.runinfo.setItemDelegateForColumn(2, delegate)
+        self.runinfo.setItemDelegateForColumn(0, delegate)
 
         # Layouts
         vlayout = Qw.QVBoxLayout(self)
@@ -151,8 +129,6 @@ class DownloadWidget(Qw.QWidget):
         self.bupdateyutubedl.clicked.connect(self.update_youtube_dl)
         self.bopen_dir.clicked.connect(self.open_dir)
         self.bexec.clicked.connect(self.on_bexec_clicked)
-        # bdelegate.delegateButtonPressed.connect(
-        #     self.on_delegate_button_pressed)
         self.worker_status = False
 
     def wstatus(self):
@@ -181,12 +157,6 @@ class DownloadWidget(Qw.QWidget):
             statusTip='restart job',
             triggered=self.restart
         )
-        arestartafter5 = Qg.QAction(
-            'restart continously',
-            self,
-            statusTip='restart after 5 seconds',
-            triggered=self.restart_after_seconds
-        )
         arem = Qg.QAction(
             'remove',
             self,
@@ -203,7 +173,7 @@ class DownloadWidget(Qw.QWidget):
         menu = Qw.QMenu("Menu", self)
         menu.addAction(acre)
         menu.addAction(arestart)
-        menu.addAction(arestartafter5)
+        # menu.addAction(arestartafter5)
         menu.addAction(arem)
         menu.addAction(aremfin)
         menu.exec(self.runinfo.mapToGlobal(point))
@@ -316,10 +286,6 @@ class DownloadWidget(Qw.QWidget):
         for line in url_text.splitlines():
             line = line.strip()
             if line:
-                if line.startswith('https://filmatic.online/'):
-                    line = get_video_url_filmatic(line)
-                # if line.startswith(('https://merlins.gr')):
-                #     line = get_video_merlin(line)
                 self.run_command(line)
         self.url.setPlainText('')
 
@@ -329,7 +295,7 @@ class DownloadWidget(Qw.QWidget):
             return
         pars = self.create_parameters()
         pars.append(url)
-        self.jobs.start(YOUTUBE_DL_EXE_PATH, pars, self.save_path.text())
+        self.jobs.start(url, YOUTUBE_DL_EXE_PATH, pars, self.save_path.text())
 
     def message(self, s):
         Qw.QMessageBox.information(self, "info", f'{s}')
@@ -347,23 +313,23 @@ class DownloadWidget(Qw.QWidget):
             if line.startswith('http'):
                 self.url.appendPlainText(line)
 
-    def report_progress(self, idx):
-        self.jobs.pm.restart_process(idx)
+    # def report_progress(self, idx):
+    #     self.jobs.pm.restart_process(idx)
 
-    def restart_after_seconds(self):
-        idx = self.runinfo.currentIndex().row()
-        # print(idx)
-        if idx < 0:
-            return
-        process = self.jobs.pm.get_process_by_index(idx)
-        self.threa = Qc.QThread()
-        self.worker = Worker(process, idx, 11, self.wstatus)
-        self.worker.moveToThread(self.threa)
-        # Step 5: Connect signals and slots
-        self.threa.started.connect(self.worker.run)
-        self.worker.finished.connect(self.threa.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.threa.finished.connect(self.threa.deleteLater)
-        self.worker.progress.connect(self.report_progress)
-        self.worker_status = True
-        self.threa.start()
+    # def restart_after_seconds(self):
+    #     idx = self.runinfo.currentIndex().row()
+    #     # print(idx)
+    #     if idx < 0:
+    #         return
+    #     process = self.jobs.pm.get_process_by_index(idx)
+    #     self.threa = Qc.QThread()
+    #     self.worker = Worker(process, idx, 11, self.wstatus)
+    #     self.worker.moveToThread(self.threa)
+    #     # Step 5: Connect signals and slots
+    #     self.threa.started.connect(self.worker.run)
+    #     self.worker.finished.connect(self.threa.quit)
+    #     self.worker.finished.connect(self.worker.deleteLater)
+    #     self.threa.finished.connect(self.threa.deleteLater)
+    #     self.worker.progress.connect(self.report_progress)
+    #     self.worker_status = True
+    #     self.threa.start()
