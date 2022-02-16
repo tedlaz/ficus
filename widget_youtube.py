@@ -312,24 +312,3 @@ class DownloadWidget(Qw.QWidget):
         for line in ftext:
             if line.startswith('http'):
                 self.url.appendPlainText(line)
-
-    # def report_progress(self, idx):
-    #     self.jobs.pm.restart_process(idx)
-
-    # def restart_after_seconds(self):
-    #     idx = self.runinfo.currentIndex().row()
-    #     # print(idx)
-    #     if idx < 0:
-    #         return
-    #     process = self.jobs.pm.get_process_by_index(idx)
-    #     self.threa = Qc.QThread()
-    #     self.worker = Worker(process, idx, 11, self.wstatus)
-    #     self.worker.moveToThread(self.threa)
-    #     # Step 5: Connect signals and slots
-    #     self.threa.started.connect(self.worker.run)
-    #     self.worker.finished.connect(self.threa.quit)
-    #     self.worker.finished.connect(self.worker.deleteLater)
-    #     self.threa.finished.connect(self.threa.deleteLater)
-    #     self.worker.progress.connect(self.report_progress)
-    #     self.worker_status = True
-    #     self.threa.start()

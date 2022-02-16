@@ -14,7 +14,7 @@ def create_save_path(image_path: str, save_path: str, size) -> str:
 
 def resize(image_path, save_path: str, size, color):
     canvas = Image.new('RGBA', size, color)
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert('RGBA')
     if image.size == size:  # Dont do anything image is in proper size already
         return image_path
     image.thumbnail(size, Image.NEAREST)
