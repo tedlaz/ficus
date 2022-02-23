@@ -29,10 +29,10 @@ build_script:
   - cmd: cd ..
   - cmd: python create_version.py
   - cmd: pyside6-rcc.exe .\resources.qrc -o resources.py
-  - cmd: python create_nsi_installer.py
+  - cmd: python create_inno_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
-  - cmd: makensis.exe installer.nsi
+  - cmd: iscc.exe installer.nsi
   - cmd: del ficus.exe
 
 artifacts:

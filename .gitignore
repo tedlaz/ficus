@@ -106,4 +106,4 @@ ffmpeg/
 
 ficus.ini
 resources.py
-installer.nsi
+installer.iss

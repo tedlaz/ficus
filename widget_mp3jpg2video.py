@@ -92,6 +92,20 @@ class UploadToYoutubeWidget(Qw.QWidget):
                              Qw.QSizePolicy.Policy.Minimum)
         hlay.addItem(sp2)
         self.bexec = Qw.QPushButton("create videos")
+        # self.bexec.setStyleSheet(
+        #     "QPushButton{\n"
+        #     "  background: rgb(0, 170, 255);\n"
+        #     "  border: 2px solid rgb(0, 170, 200);\n"
+        #     "  border-radius: 10px;\n"
+        #     "  color: white;\n"
+        #     "}\n"
+        #     "\n"
+        #     "QPushButton:hover{\n"
+        #     "	background-color: rgb(26, 221, 107);\n"
+        #     "	 border: 2px solid rgb(26, 150, 107);\n"
+        #     "}\n"
+        #     ""
+        # )
         hlay.addWidget(self.bexec)
 
         self.log = Qw.QTableView()
