@@ -33,7 +33,7 @@ build_script:
   - cmd: python create_inno_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
-  - cmd: "%INNOPATH%\\ISCC.exe" installer.iss
+  - cmd: C:\Program Files (x86)\Inno Setup 6\ISCC.exe installer.iss
   - cmd: del ficus.exe
 
 artifacts:
