@@ -1,5 +1,5 @@
 python create_version.py
-pyside6-rcc.exe .\resources.qrc -o resources.py
+pyside6-rcc.exe .\resources.qrc -o resources_rc.py
 python create_inno_installer.py
 pyinstaller -F -w -i ficus.ico ficus.py
 copy .\dist\ficus.exe .

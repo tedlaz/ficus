@@ -4,7 +4,7 @@ from PySide6 import QtCore as Qc
 from PySide6 import QtGui as Qg
 from PySide6 import QtWidgets as Qw
 
-import resources
+import resources_rc
 from version import VERSION
 from widget_mp3jpg2video import UploadToYoutubeWidget
 from widget_youtube import DownloadWidget
