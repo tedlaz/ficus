@@ -107,3 +107,5 @@ ffmpeg/
 ficus.ini
 resources.py
 installer.iss
+resources_rc.py
+Greek.isl
