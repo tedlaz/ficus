@@ -46,7 +46,7 @@ deploy:
   description: v$(appveyor_build_version)
   provider: GitHub
           # Αυτό είναι το νέο token auth_token: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
-    secure: DIE9Xc0eKsig7SywkSlNOi9u8h+LuRvKlaN8jJrmVsqyjVn0takAFGilyFZilb4U
+    secure: ke671pwF/sNTSgTbFyDEgiwWXXV9/BOhEBrAUqmN44H+zhMUO0irDiWZBGbiHDiA
 
   artifact: myartifact
   draft: false
