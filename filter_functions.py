@@ -1,21 +1,21 @@
 """Implementing filter functions with closures"""
 import re
 
-pre = re.compile('\[download\]( +)(\d+.\d+)%', re.M)
+pre = re.compile(r"\[download\]( +)(\d+.\d+)%", re.M)
 
 
 def youtubedl_percent():
     biggest_value = 0.0
 
-    def inner_function(text2parse: str = '', reset=False):
+    def inner_function(text2parse: str = "", reset=False):
         nonlocal biggest_value
         if reset:
             biggest_value = 0.0
-        m = pre.search(text2parse)
+        found = pre.search(text2parse)
         value = 0
 
-        if m:
-            value = float(m.group(2))
+        if found:
+            value = float(found.group(2))
 
         if biggest_value < value:
             biggest_value = value
@@ -25,13 +25,13 @@ def youtubedl_percent():
 
 
 def ffmpeg():
-    value = ''
+    value = ""
 
-    def inner_function(text2parse: str = '', reset=False):
+    def inner_function(text2parse: str = "", reset=False):
         nonlocal value
         if reset:
-            value = ''
-        if text2parse.startswith('frame='):
+            value = ""
+        if text2parse.startswith("frame="):
             value = text2parse
 
         return value
@@ -40,20 +40,21 @@ def ffmpeg():
 
 
 def filter_text_down_ffmpeg():
-    last_val = ''
+    last_val = ""
 
-    def inner_function(new_val: str = '', reset=False):
+    def inner_function(new_val: str = "", reset=False):
         nonlocal last_val
         if reset:
-            last_val = ''
+            last_val = ""
         sdest = "[download] Destination: "
         sfile = "[ffmpeg] Destination: "
-        for s in new_val.splitlines():
-            if s.startswith(sdest):
-                last_val = s.replace(sdest, '')
-            if s.startswith(sfile):
-                last_val = s.replace(sfile, '')
+        for str_line in new_val.splitlines():
+            if str_line.startswith(sdest):
+                last_val = str_line.replace(sdest, "")
+            if str_line.startswith(sfile):
+                last_val = str_line.replace(sfile, "")
         return last_val
+
     return inner_function
 
 
