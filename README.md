@@ -7,6 +7,8 @@ Another gui for [youtube-dl](https://youtube-dl.org) with extra option to create
 
 For windows setup creation i use [nsis](https://nsis.sourceforge.io/Download)
 
+
+The last version of yt-dlp.exe is [here](https://github.com/yt-dlp/yt-dlp/releases/latest/)
 # Screen captures
 
 ![screen1](./screen1.gif?raw=true 'Screen capture 1')
