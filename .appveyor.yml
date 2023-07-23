@@ -46,7 +46,7 @@ deploy:
   description: v$(appveyor_build_version)
   provider: GitHub
   auth_token:
-    secure: ke671pwF/sNTSgTbFyDEgiwWXXV9/BOhEBrAUqmN44H+zhMUO0irDiWZBGbiHDiA
+    secure: b4FPQSf+tKomFFXg2rD5nwlbLRFES87WKnE2aWwsT54yELhrreW+76rx52USLK+I
 
   artifact: myartifact
   draft: false
