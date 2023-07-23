@@ -25,11 +25,11 @@ build_script:
   - cmd: cd external
   - cmd: curl -L -o ffmpg.7z https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
   - cmd: 7z e ffmpg.7z  *.exe -r
-  - cmd: curl -L -o youtube-dl.exe https://github.com/yt-dlp/yt-dlp/releases/download/2023.02.17/yt-dlp.exe
+  - cmd: curl -L -o youtube-dl.exe https://github.com/yt-dlp/yt-dlp/releases/download/2023.03.04/yt-dlp.exe
   - cmd: copy C:\Windows\SysWOW64\msvcr100.dll .
   - cmd: cd ..
   - cmd: python create_version.py
-  - cmd: pyside6-rcc.exe .\resources.qrc -o resources.py
+  - cmd: pyside6-rcc.exe .\resources.qrc -o resources_rc.py
   - cmd: python create_inno_installer.py
   - cmd: pyinstaller.exe -F -w -i ficus.ico ficus.py
   - cmd: copy .\dist\ficus.exe .
